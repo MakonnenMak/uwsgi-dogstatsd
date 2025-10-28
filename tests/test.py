@@ -94,14 +94,6 @@ class Test(threading.Thread):
         'myapp.worker.respawns'
     ]
 
-    # Metrics that should be sent as gauges (|g) instead of counters (|c)
-    GAUGE_METRICS = [
-        'myapp.worker.requests',
-        'myapp.worker.respawns',
-        'myapp.worker.total_tx',
-        'myapp.worker.core.requests'
-    ]
-
     VAL_METRICS = {
         'myapp.worker.avg_response_time': (50, 250)
     }
@@ -146,16 +138,15 @@ class Test(threading.Thread):
                     self.failure += 1
                     self.errors.append(k)
 
-            # Verify that metrics are sent as gauges
+            # Verify that ALL metrics are sent as gauges (|g), not counters (|c)
             all_data = self.data.get_data()
-            for k in self.GAUGE_METRICS:
-                if k in all_data:
-                    if all_data[k]['metric_type'] == 'g':
-                        self.success += 1
-                    else:
-                        self.setExitValue(1)
-                        self.failure += 1
-                        self.errors.append(k + ' (wrong type: ' + all_data[k]['metric_type'] + ')')
+            for k, v in all_data.iteritems():
+                if v['metric_type'] == 'g':
+                    self.success += 1
+                else:
+                    self.setExitValue(1)
+                    self.failure += 1
+                    self.errors.append(k + ' (wrong type: ' + v['metric_type'] + ', expected g)')
 
         self.oldData = attributes_changed
 
